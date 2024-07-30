@@ -1,0 +1,37 @@
+<!DOCTYPE HTML>
+
+<html>
+	<head>
+		<title>Competition</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/competition.css" />
+		<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	</head>
+	<body class="is-preload">
+
+		<!-- Header -->
+			<header id="header">
+				<a href="https://www.bodaborg.com/" target="_blank" rel="noopener noreferrer" style="text-decoration:none">
+                    <h1 id="location-name">Boda Borg</h1>
+                </a>
+			</header>
+            <div class="change-graph">
+                <p id="daily" class="update">Daily</p>
+                <p id="weekly" class="update">Weekly</p>
+                <p id="monthly" class="update">Monthly</p>
+            </div>
+            <div class="date-select">
+                <input type="date" id="start-date" name="start-date">
+            </div>
+            <div class="chart">
+                <canvas id="myChart"></canvas>
+            </div>
+
+		<!-- Scripts -->
+			<script type="module" src="assets/js/competition.js"></script>
+            <script type="module" src="assets/js/charts.js"></script>
+
+	</body>
+</html>
