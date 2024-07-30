@@ -93,12 +93,23 @@ var myChart = new Chart(ctx, {
     options: options
 });
 
-function setLabels(labels) {
+export function setLabels(labels) {
     data.labels = labels;
     myChart.update();
 }
 
-function setDataset(dataset) {
-    data.datasets = dataset;
+export function setDataset(tickets) {
+    if (data.datasets[0]) {
+        data.datasets[0].data = tickets;
+    } else {
+        data.datasets.push({
+            label: 'Ticket Sales',
+            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 2,
+            data: tickets,
+            lineTension: 0, // Adjust line tension as needed
+        });
+    }
     myChart.update();
 }
