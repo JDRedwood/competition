@@ -25,6 +25,14 @@ header {
     padding: 0;
 }
 
+#map {
+    height: 500px; /* Adjust the height as needed */
+    width:60vw;
+    margin:10vw;
+    border: 5px solid #ffffff;
+    box-shadow: 0 0 8px #393939;
+}
+
 h1 {
     font-size: 1.5em;
     margin: 0;

@@ -113,3 +113,15 @@ export function setDataset(tickets) {
     }
     myChart.update();
 }
+
+export function changeTitle(title){
+    myChart.options.plugins.title.text = title;
+    myChart.update();
+    console.log("Title changed to: ", title);
+}
+
+export function changeYAxis(max){
+    myChart.options.scales.y.ticks.max = max;
+    myChart.update();
+    console.log("Y-axis max changed to: ", max);
+}

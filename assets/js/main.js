@@ -109,9 +109,11 @@ import { setData, getData } from './data.js';
             // A location is selected, proceed with form submission
 			const selectedOption = locationSelect.options[locationSelect.selectedIndex];
             setData('location', locationSelect.value);
-            setData('locationName', selectedOption.text);
+            setData('locationName', selectedOption.getAttribute('name'));
             setData('tableName', selectedOption.getAttribute('tableName'));
             setData('link', selectedOption.getAttribute('link'));
+			setData('placeId', selectedOption.getAttribute('placeId'));
+			setData('address', selectedOption.getAttribute('address'));
             // console.log('Location selected:', locationSelect.value);
             // console.log('Location name:', selectedOption.text);
             // console.log('Table name:', selectedOption.getAttribute('tableName'));

@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Fetch locations from Supabase
         let { data, error } = await supabase
             .from('locations') // Your table name
-            .select('id, city, state_abr, country, name, table_name, link'); // Adjust based on your table schema
+            .select('id, city, state_abr, country, name, address, table_name, link, placeId'); // Adjust based on your table schema
 
         if (error) {
             throw error;
@@ -28,6 +28,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                 option.setAttribute('name', location.name);
                 option.setAttribute('tableName', location.table_name); // Store the table name in the option element
                 option.setAttribute('link', location.link);
+                option.setAttribute('placeId', location.placeId); // Store the place ID in the option element
+                option.setAttribute('address', `address`);
                 locationSelect.appendChild(option);
             });
         } else {
