@@ -10,17 +10,23 @@ document.addEventListener('DOMContentLoaded', async function () {
     const locationName = getData("locationName");
     const tableName = getData("tableName");
     const link = getData("link");
+    const city = getData("city");
+    const state_abr = getData("state_abr");
 
-    document.getElementById("location-name").innerHTML = locationName;
 
     console.log("Fetching data from Supabase...");
     console.log("Table Name:", tableName);
     console.log("Location Name:", locationName);
     console.log("Link:", link);
+    console.log("City:", city);
+    console.log("State:", state_abr);
+
+    document.getElementById("location-name").innerHTML = locationName;
+    document.getElementById("location").innerHTML = `${city}, ${state_abr}`;
 
 
     // Update the header link
-    const headerLink = document.querySelector('#header a');
+    const headerLink = document.querySelector('#location-link');
     headerLink.href = link;
 
     let currentDate = new Date();
@@ -71,7 +77,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                 for (const timeSlot in timeSlots) {
                     let ticketsAvailable = timeSlots[timeSlot];
                     let ticketMax = ticketsPerTime;
-                    if (ticketsAvailable > ticketsPerTime){
+                    if (ticketsAvailable > ticketsPerTime) {
                         ticketMax = ticketMax * 2;
                     }
                     let ticketsSold = ticketMax - ticketsAvailable;
@@ -96,7 +102,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     async function getWeeklyData(supabase, tableName, newDate) {
         let currentLabels = [];
-        const currentDate = new Date(newDate); // Ensure currentDate is a Date object
 
         let labels = [];
         let dates = [];
@@ -155,12 +160,12 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     async function getMonthlyData(supabase, tableName, dateStr) {
-        const currentDate = new Date(dateStr);
         let currentLabels = [];
-
-        const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1); // Get the first date of the current month
-        const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0); // Get the last date of the current month
-
+        let startDate = new Date(dateStr);
+        startDate = new Date(startDate.getTime() + startDate.getTimezoneOffset() * 60000); // Adjust for local timezone
+        console.log("Start Date:", startDate);
+        const startOfMonth = new Date(startDate.getFullYear(), startDate.getMonth(), 1); // Get the first date of the current month
+        const endOfMonth = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0); // Get the last date of the current month
         let labels = [];
         let dates = [];
         for (let date = new Date(startOfMonth); date <= endOfMonth; date.setDate(date.getDate() + 1)) {
@@ -196,7 +201,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
             setLabels(labels);
             setDataset(tickets);
-            const formattedMonth = currentDate.toLocaleString('default', { month: 'long' });
+            const formattedMonth = startDate.toLocaleString('default', { month: 'long' });
             changeTitle(formattedMonth);
             window.showMonthSelection();
         }
@@ -204,14 +209,24 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     window.updateData = function (dateStr) {
-        console.log("Updating data for date:", dateStr);
-        const date = dateStr; // Keep date as a string in YYYY-MM-DD format
+        // Ensure the date string is in YYYY-MM-DD format
+        let dateParts;
+        if (dateStr.length === 7) { // Handle YYYY-MM format
+            dateParts = dateStr.split('-');
+            dateParts.push('01'); // Add day 1 to make it YYYY-MM-DD
+        } else {
+            dateParts = dateStr.split('-');
+        }
+        
+        // Create the date object with UTC to avoid timezone issues
+        currentDate = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2]));
+        currentDate = new Date(currentDate.getTime() + currentDate.getTimezoneOffset() * 60000); // Adjust for local timezone      
         if (currentSelection === "daily") {
-            getDailyData(supabase, tableName, date);
+            getDailyData(supabase, tableName, dateStr);
         } else if (currentSelection === "weekly") {
-            getWeeklyData(supabase, tableName, date);
+            getWeeklyData(supabase, tableName, dateStr);
         } else if (currentSelection === "monthly") {
-            getMonthlyData(supabase, tableName, date);
+            getMonthlyData(supabase, tableName, dateStr);
         }
     }
 
@@ -246,18 +261,30 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // ### MAP FUNCTIONALITY ###
     const address = getData('address'); // Assuming getData('address') retrieves your address
+    console.log('Updating Address:' + address);
 
     async function getCoordinates(address) {
-        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
-        const response = await fetch(url);
-        const data = await response.json();
-        if (data && data.length > 0) {
-            return {
-                lat: parseFloat(data[0].lat),
-                lon: parseFloat(data[0].lon)
-            };
-        } else {
-            throw new Error('Address not found');
+        // Simplify the address by removing complex parts and formatting
+        const simplifiedAddress = address.split(',').slice(0, 1).join(','); // Use the first two parts of the address
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(simplifiedAddress.trim())}`;
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            console.log('API Response Data:', data); // Log the full response data for debugging
+            if (data && data.length > 0) {
+                return {
+                    lat: parseFloat(data[0].lat),
+                    lon: parseFloat(data[0].lon)
+                };
+            } else {
+                throw new Error('Address not found in response data');
+            }
+        } catch (error) {
+            console.error('Error fetching coordinates:', error.message);
+            throw error;
         }
     }
 

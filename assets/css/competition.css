@@ -20,7 +20,7 @@ body {
 }
 
 header {
-    font-size: 3em;
+    font-size: 2em;
     margin: 0;
     padding: 0;
 }
@@ -34,8 +34,9 @@ header {
 }
 
 h1 {
-    font-size: 1.5em;
-    margin: 0;
+    font-size: 2em;
+    margin:0;
+    margin-top:4px;
     padding: 0;
     text-decoration: none;
 
@@ -86,4 +87,39 @@ a h1:hover {
 
 .date-select {
     margin:1em;
+}
+
+#location{
+    margin:2px;
+    font-size: 1.75em;
+    color:#c6c6c6;
+}
+
+.header-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+#return {
+    position: absolute;
+    left: 10px; /* Adjust as needed */
+    top:10px;
+    width: 5.2vw;
+    height: 5.2vw;
+}
+
+#return:hover {
+    cursor: pointer;
+    scale:0.95;
+}
+
+#home-link{
+    margin:0;
+    padding:0;
+}
+
+#location-name {
+    margin: 0 auto; /* Center the heading */
+    text-align: center;
 }

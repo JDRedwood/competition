@@ -29,7 +29,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                 option.setAttribute('tableName', location.table_name); // Store the table name in the option element
                 option.setAttribute('link', location.link);
                 option.setAttribute('placeId', location.placeId); // Store the place ID in the option element
-                option.setAttribute('address', `address`);
+                option.setAttribute('address', location.address); // Store the address in the option element
+                option.setAttribute('state_abr', location.state_abr); // Store the state abbreviation in the option element
+                option.setAttribute('city', location.city); // Store the city in the option element
                 locationSelect.appendChild(option);
             });
         } else {

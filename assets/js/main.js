@@ -114,10 +114,8 @@ import { setData, getData } from './data.js';
             setData('link', selectedOption.getAttribute('link'));
 			setData('placeId', selectedOption.getAttribute('placeId'));
 			setData('address', selectedOption.getAttribute('address'));
-            // console.log('Location selected:', locationSelect.value);
-            // console.log('Location name:', selectedOption.text);
-            // console.log('Table name:', selectedOption.getAttribute('tableName'));
-            // console.log('Link:', selectedOption.getAttribute('link'));
+			setData('state_abr', selectedOption.getAttribute('state_abr'));
+			setData('city', selectedOption.getAttribute('city'));
             window.location.href = "template.html";
         } else {
             // No location selected, show an alert or handle as needed

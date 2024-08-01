@@ -1,47 +1,56 @@
 <!DOCTYPE HTML>
 
 <html>
-	<head>
-		<title>Competition</title>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-		<link rel="stylesheet" href="assets/css/competition.css" />
-		<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css">
-        <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-        <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-	</head>
-	<body class="is-preload">
 
-		<!-- Header -->
-			<header id="header">
-				<a href="https://www.bodaborg.com/" target="_blank" rel="noopener noreferrer" style="text-decoration:none">
-                    <h1 id="location-name">Boda Borg</h1>
-                </a>
-			</header>
-            <div class="change-graph">
-                <p id="daily" class="update">Daily</p>
-                <p id="weekly" class="update">Weekly</p>
-                <p id="monthly" class="update">Monthly</p>
-            </div>
-            <div class="date-select">
-                <input type="text" id="datePicker" placeholder="Select Date or Month">
-            </div>
-            <div class="chart">
-                <canvas id="myChart"></canvas>
-            </div>
-            <div>
-                <h1>Total Sales: <span id="totalSales">0</span></h1>
-            </div>
-            <div id="map"></div>
+<head>
+    <title>Competition</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <link rel="stylesheet" href="assets/css/competition.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+</head>
 
-		<!-- Scripts -->
-			<script type="module" src="assets/js/competition.js"></script>
-            <script type="module" src="assets/js/charts.js"></script>
-            <script type="module" src="assets/js/flatpickr.js"></script>
-	</body>
+<body class="is-preload">
+
+    <!-- Header -->
+    <header id="header">
+        <div class="header-container">
+            <a href="index.html" id="home-link">
+                <img src="images/return.png" alt="return" id="return">
+            </a>
+            <a href="https://www.bodaborg.com/" target="_blank" rel="noopener noreferrer" style="text-decoration:none" id="location-link">
+                <h1 id="location-name">Boda Borg</h1>
+            </a>
+        </div>
+    </header>
+    <h1 id="location">Los Angeles, CA</h1>
+    <div class="change-graph">
+        <p id="daily" class="update">Daily</p>
+        <p id="weekly" class="update">Weekly</p>
+        <p id="monthly" class="update">Monthly</p>
+    </div>
+    <div class="date-select">
+        <input type="text" id="datePicker" placeholder="Select Date or Month">
+    </div>
+    <div class="chart">
+        <canvas id="myChart"></canvas>
+    </div>
+    <div>
+        <h1>Total Sales: <span id="totalSales">0</span></h1>
+    </div>
+    <div id="map"></div>
+
+    <!-- Scripts -->
+    <script type="module" src="assets/js/competition.js"></script>
+    <script type="module" src="assets/js/charts.js"></script>
+    <script type="module" src="assets/js/flatpickr.js"></script>
+</body>
+
 </html>
