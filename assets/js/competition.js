@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const link = getData("link");
     const city = getData("city");
     const state_abr = getData("state_abr");
+    const price = getData("price");
 
 
     console.log("Fetching data from Supabase...");
@@ -20,6 +21,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     console.log("Link:", link);
     console.log("City:", city);
     console.log("State:", state_abr);
+    console.log("Price:", price);
 
     document.getElementById("location-name").innerHTML = locationName;
     document.getElementById("location").innerHTML = `${city}, ${state_abr}`;
@@ -56,55 +58,151 @@ document.addEventListener('DOMContentLoaded', async function () {
     async function getDailyData(supabase, tableName, dateStr) {
         const currentDate = dateStr;
         let currentLabels = [];
-        let { data, error } = await supabase
-            .from(tableName)
-            .select('timeSlots, ticketsPerTime, ticketsPerDay')
-            .eq('date', currentDate);
 
-        if (error) {
-            console.error('Error fetching data:', error);
-        } else {
-            // console.log('Data fetched:', data);
-            // Assuming only one record per date
-            if (data.length > 0) {
-                const timeSlots = data[0].timeSlots;
-                const ticketsPerTime = data[0].ticketsPerTime;
-                const ticketsPerDay = data[0].ticketsPerDay;
+        if (tableName.includes("escapegame")) {
+            let { data, error } = await supabase
+                .from(tableName)
+                .select('date, timeSlots')
+                .eq('date', currentDate);
+            if (error) {
+                console.error('Error fetching data:', error);
+            } else {
+                // Assuming only one record per date
+                if (data.length > 0) {
+                    const timeSlotsData = data[0].timeSlots;
+                    let timeSlotsArray = [];
+                    let totalTimeSlots = 0;
+                    let bookedTimeSlots = 0;
+                    let totalTicketsSold = 0;
+                    let totalPossibleTickets = 0;
 
-                currentLabels = Object.keys(timeSlots);
+                    for (const gameId in timeSlotsData) {
+                        const timeSlots = timeSlotsData[gameId].timeSlots;
+                        const totalTickets = timeSlotsData[gameId].totalTickets;
+                        for (const time in timeSlots) {
+                            const ticketsAvailable = timeSlots[time];
+                            const ticketsSold = totalTickets - ticketsAvailable;
 
-                let tickets = [];
-                for (const timeSlot in timeSlots) {
-                    let ticketsAvailable = timeSlots[timeSlot];
-                    let ticketMax = ticketsPerTime;
-                    if (ticketsAvailable > ticketsPerTime) {
-                        ticketMax = ticketMax * 2;
+                            // Convert time to a readable format
+                            const hours = Math.floor(time / 100);
+                            const minutes = time % 100;
+                            const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+
+                            timeSlotsArray.push({
+                                time: formattedTime,
+                                ticketsSold: ticketsSold
+                            });
+
+                            totalTimeSlots++;
+                            totalTicketsSold += ticketsSold;
+                            totalPossibleTickets += totalTickets;
+                            if (ticketsSold > 0) {
+                                bookedTimeSlots++;
+                            }
+                        }
                     }
-                    let ticketsSold = ticketMax - ticketsAvailable;
-                    tickets.push(ticketsSold);
+
+                    // Sort the time slots by time in ascending order
+                    timeSlotsArray.sort((a, b) => {
+                        const timeA = a.time.split(':').join('');
+                        const timeB = b.time.split(':').join('');
+                        return timeA - timeB;
+                    });
+
+                    // Update labels and tickets
+                    currentLabels = timeSlotsArray.map(slot => slot.time);
+                    let tickets = timeSlotsArray.map(slot => slot.ticketsSold);
+
+                    document.getElementById("totalSales").innerHTML = "Total Sales: " + totalTicketsSold;
+
+                    setLabels(currentLabels);
+                    setDataset(tickets);
+
+                    const [year, month, day] = currentDate.split('-');
+                    const formattedDate = new Date(year, month - 1, day).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                    changeTitle(formattedDate);
+                    window.showDateSelection();
+
+                    // Calculate the percentage of time slots that had a booking
+                    const percentageBooked = (bookedTimeSlots / totalTimeSlots) * 100;
+                    // Calculate the capacity booked percentage
+                    const capacityBooked = (totalTicketsSold / totalPossibleTickets) * 100;
+                    const revenue = totalTicketsSold * price;
+                    document.getElementById("revenue").innerHTML = `Estimated Revenue: $${revenue}` + ' | @ $' + price;
+                    document.getElementById("percentageBooked").innerHTML = 'Time Slots Booked: ' + percentageBooked.toFixed(2) + '%' + ' | ' + bookedTimeSlots + '/' + totalTimeSlots;
+                    document.getElementById("capacityBooked").innerHTML = 'Total Capacity Booked: ' + capacityBooked.toFixed(2) + '%' + ' | ' + totalTicketsSold + '/' + totalPossibleTickets;
                 }
+            }
+        } else {
+            let { data, error } = await supabase
+                .from(tableName)
+                .select('timeSlots, ticketsPerTime, ticketsPerDay')
+                .eq('date', currentDate);
 
-                let totalTicketsSold = tickets.reduce((total, ticket) => total + ticket, 0);
-                // console.log("Total Tickets Sold:", totalTicketsSold);
+            if (error) {
+                console.error('Error fetching data:', error);
+            } else {
+                // Assuming only one record per date
+                if (data.length > 0) {
+                    const timeSlots = data[0].timeSlots;
+                    const ticketsPerTime = data[0].ticketsPerTime;
+                    const ticketsPerDay = data[0].ticketsPerDay;
 
-                document.getElementById("totalSales").innerHTML = totalTicketsSold;
+                    currentLabels = Object.keys(timeSlots);
 
-                setLabels(currentLabels);
-                setDataset(tickets);
-                const [year, month, day] = currentDate.split('-');
-                const formattedDate = new Date(year, month - 1, day).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                changeTitle(formattedDate);
-                window.showDateSelection();
+                    let tickets = [];
+                    let totalTimeSlots = 0;
+                    let bookedTimeSlots = 0;
+                    let totalTicketsSold = 0;
+                    let totalPossibleTickets = 0;
+
+                    for (const timeSlot in timeSlots) {
+                        let ticketsAvailable = timeSlots[timeSlot];
+                        let ticketMax = ticketsPerTime;
+                        if (ticketsAvailable > ticketsPerTime) {
+                            ticketMax = ticketMax * 2;
+                        }
+                        let ticketsSold = ticketMax - ticketsAvailable;
+                        tickets.push(ticketsSold);
+
+                        totalTimeSlots++;
+                        totalTicketsSold += ticketsSold;
+                        totalPossibleTickets += ticketMax;
+                        if (ticketsSold > 0) {
+                            bookedTimeSlots++;
+                        }
+                    }
+
+                    totalTicketsSold = tickets.reduce((total, ticket) => total + ticket, 0);
+                    document.getElementById("totalSales").innerHTML = "Total Sales: " + totalTicketsSold;
+
+                    setLabels(currentLabels);
+                    setDataset(tickets);
+                    const [year, month, day] = currentDate.split('-');
+                    const formattedDate = new Date(year, month - 1, day).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                    changeTitle(formattedDate);
+                    window.showDateSelection();
+
+                    // Calculate the percentage of time slots that had a booking
+                    const percentageBooked = (bookedTimeSlots / totalTimeSlots) * 100;
+                    // Calculate the capacity booked percentage
+                    const capacityBooked = (totalTicketsSold / totalPossibleTickets) * 100;
+                    const revenue = totalTicketsSold * price;
+                    document.getElementById("revenue").innerHTML = `Estimated Revenue: $${revenue}` + ' | @ $' + price;
+                    document.getElementById("percentageBooked").innerHTML = 'Time Slots Booked: ' + percentageBooked.toFixed(2) + '%' + ' | ' + bookedTimeSlots + '/' + totalTimeSlots;
+                    document.getElementById("capacityBooked").innerHTML = 'Total Capacity Booked: ' + capacityBooked.toFixed(2) + '%' + ' | ' + totalTicketsSold + '/' + totalPossibleTickets;
+
+                }
             }
         }
-
     }
 
     async function getWeeklyData(supabase, tableName, newDate) {
         let currentLabels = [];
-
         let labels = [];
         let dates = [];
+        const currentDate = new Date(newDate);
+
         for (let i = 0; i < 7; i++) {
             const date = new Date(currentDate);
             date.setDate(currentDate.getDate() + i);
@@ -112,102 +210,187 @@ document.addEventListener('DOMContentLoaded', async function () {
             dates.push(date.toISOString().split('T')[0]);
         }
 
+        let selectFields = 'date, ticketsPerTime, timeSlots';
+        if (tableName.includes("escapegame")) {
+            selectFields = 'date, timeSlots';
+        }
+
         let { data, error } = await supabase
             .from(tableName)
-            .select('date, ticketsPerTime, timeSlots')
+            .select(selectFields)
             .in('date', dates);
 
         if (error) {
             console.error('Error fetching data:', error);
-        } else {
-            console.log('Data fetched:', data);
-            let ticketsPerDayMap = {};
-            let maxTicketsPerDay = 0;
-            data.forEach(record => {
-                let totalTicketsAvailable = 0;
-                Object.values(record.timeSlots).forEach(tickets => {
-                    totalTicketsAvailable += tickets;
-                });
-
-                let ticketsSold = (record.ticketsPerTime * Object.keys(record.timeSlots).length) - totalTicketsAvailable;
-                ticketsPerDayMap[record.date] = ticketsSold;
-
-                maxTicketsPerDay = record.ticketsPerDay;
-            });
-
-            let tickets = dates.map(date => ticketsPerDayMap[date] || 0);
-
-            let totalTicketsSold = tickets.reduce((total, ticket) => total + ticket, 0);
-            console.log("Total Tickets Sold:", totalTicketsSold);
-
-            document.getElementById("totalSales").innerHTML = totalTicketsSold;
-
-            setLabels(labels);
-            setDataset(tickets);
-
-            const startDateStr = dates[0];
-            const endDateStr = dates[dates.length - 1];
-            const [startYear, startMonth, startDay] = startDateStr.split('-');
-            const formattedStartDate = new Date(startYear, startMonth - 1, startDay).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
-            const [endYear, endMonth, endDay] = endDateStr.split('-');
-            const formattedEndDate = new Date(endYear, endMonth - 1, endDay).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
-            const title = `${formattedStartDate} - ${formattedEndDate}`;
-
-            changeTitle(title);
-            window.showDateSelection();
+            return;
         }
+        console.log("Data:", data);
+        let ticketsPerDayMap = {};
+        let totalBookedTimeSlots = 0;
+        let totalPossibleTimeSlots = 0;
+        let totalTicketsSold = 0;
+        let totalPossibleTickets = 0;
 
+        data.forEach(record => {
+            if (tableName.includes("escapegame")) {
+                let dailyTicketsSold = 0;
+                let dailyTotalTimeSlots = 0;
+                let dailyBookedTimeSlots = 0;
+                const games = record.timeSlots;
+                for (const gameId in games) {
+                    const timeSlots = games[gameId].timeSlots;
+                    const totalTickets = games[gameId].totalTickets;
+                    for (const tickets of Object.values(timeSlots)) {
+                        dailyTicketsSold += totalTickets - tickets;
+                        dailyTotalTimeSlots++;
+                        if (tickets < totalTickets) {
+                            dailyBookedTimeSlots++;
+                        }
+                    }
+                }
+                ticketsPerDayMap[record.date] = dailyTicketsSold;
+                totalBookedTimeSlots += dailyBookedTimeSlots;
+                totalPossibleTimeSlots += dailyTotalTimeSlots;
+                totalTicketsSold += dailyTicketsSold;
+                totalPossibleTickets += dailyTotalTimeSlots * totalTickets;
+            } else {
+                let dailyTicketsSold = 0;
+                let dailyTotalTimeSlots = 0;
+                let dailyBookedTimeSlots = 0;
+                const timeSlots = record.timeSlots;
+                const ticketsPerTime = record.ticketsPerTime;
+                Object.values(timeSlots).forEach(tickets => {
+                    dailyTicketsSold += ticketsPerTime - tickets;
+                    dailyTotalTimeSlots++;
+                    if (tickets < ticketsPerTime) {
+                        dailyBookedTimeSlots++;
+                    }
+                });
+                ticketsPerDayMap[record.date] = dailyTicketsSold;
+                totalBookedTimeSlots += dailyBookedTimeSlots;
+                totalPossibleTimeSlots += dailyTotalTimeSlots;
+                totalTicketsSold += dailyTicketsSold;
+                totalPossibleTickets += dailyTotalTimeSlots * ticketsPerTime;
+            }
+        });
+
+        let tickets = dates.map(date => ticketsPerDayMap[date] || 0);
+        let averagePercentageBooked = (totalBookedTimeSlots / totalPossibleTimeSlots) * 100;
+        let averageCapacityBooked = (totalTicketsSold / totalPossibleTickets) * 100;
+        const revenue = totalTicketsSold * price;
+        document.getElementById("totalSales").innerHTML = "Total Sales: " + totalTicketsSold;
+        document.getElementById("revenue").innerHTML = `Estimated Revenue: $${revenue}` + ' | @ $' + price;
+        document.getElementById("percentageBooked").innerHTML = 'Avergae Slots Booked: ' + averagePercentageBooked.toFixed(2) + '%' + ' | ' + totalBookedTimeSlots + '/' + totalPossibleTimeSlots;
+        document.getElementById("capacityBooked").innerHTML = 'Avergae Capacity Booked: ' + averageCapacityBooked.toFixed(2) + '%' + ' | ' + totalTicketsSold + '/' + totalPossibleTickets;
+
+        setLabels(labels);
+        setDataset(tickets);
+
+        const startDateStr = dates[0];
+        const endDateStr = dates[dates.length - 1];
+        const [startYear, startMonth, startDay] = startDateStr.split('-');
+        const formattedStartDate = new Date(startYear, startMonth - 1, startDay).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
+        const [endYear, endMonth, endDay] = endDateStr.split('-');
+        const formattedEndDate = new Date(endYear, endMonth - 1, endDay).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
+        const title = `${formattedStartDate} - ${formattedEndDate}`;
+
+        changeTitle(title);
+        window.showDateSelection();
     }
 
     async function getMonthlyData(supabase, tableName, dateStr) {
         let currentLabels = [];
         let startDate = new Date(dateStr);
         startDate = new Date(startDate.getTime() + startDate.getTimezoneOffset() * 60000); // Adjust for local timezone
-        console.log("Start Date:", startDate);
         const startOfMonth = new Date(startDate.getFullYear(), startDate.getMonth(), 1); // Get the first date of the current month
         const endOfMonth = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0); // Get the last date of the current month
         let labels = [];
         let dates = [];
+
         for (let date = new Date(startOfMonth); date <= endOfMonth; date.setDate(date.getDate() + 1)) {
             labels.push(formatDateToYMD(date));
             dates.push(formatDateToYMD(date));
         }
 
+        let selectFields = 'date, ticketsPerTime, timeSlots';
+        if (tableName.includes("escapegame")) {
+            selectFields = 'date, timeSlots';
+        }
+        console.log("Select Fields:", selectFields);
         let { data, error } = await supabase
             .from(tableName)
-            .select('date, ticketsPerTime, timeSlots')
+            .select(selectFields)
             .in('date', dates);
 
         if (error) {
             console.error('Error fetching data:', error);
-        } else {
-            console.log('Data fetched:', data);
-            let ticketsPerDayMap = {};
-            data.forEach(record => {
-                let totalTicketsAvailable = 0;
-                Object.values(record.timeSlots).forEach(tickets => {
-                    totalTicketsAvailable += tickets;
-                });
-                let ticketsSold = (record.ticketsPerTime * Object.keys(record.timeSlots).length) - totalTicketsAvailable;
-                ticketsPerDayMap[record.date] = ticketsSold;
-            });
-
-            let tickets = dates.map(date => ticketsPerDayMap[date] || 0);
-
-            let totalTicketsSold = tickets.reduce((total, ticket) => total + ticket, 0);
-            console.log("Total Tickets Sold:", totalTicketsSold);
-
-            document.getElementById("totalSales").innerHTML = totalTicketsSold;
-
-            setLabels(labels);
-            setDataset(tickets);
-            const formattedMonth = startDate.toLocaleString('default', { month: 'long' });
-            changeTitle(formattedMonth);
-            window.showMonthSelection();
+            return;
         }
 
-    }
+        let ticketsPerDayMap = {};
+        let totalBookedTimeSlots = 0;
+        let totalPossibleTimeSlots = 0;
+        let totalTicketsSold = 0;
+        let totalPossibleTickets = 0;
 
+        data.forEach(record => {
+            if (tableName.includes("escapegame")) {
+                let dailyTicketsSold = 0;
+                let dailyTotalTimeSlots = 0;
+                let dailyBookedTimeSlots = 0;
+                const games = record.timeSlots;
+                for (const gameId in games) {
+                    const timeSlots = games[gameId].timeSlots;
+                    const totalTickets = games[gameId].totalTickets;
+                    for (const tickets of Object.values(timeSlots)) {
+                        dailyTicketsSold += totalTickets - tickets;
+                        dailyTotalTimeSlots++;
+                        if (tickets < totalTickets) {
+                            dailyBookedTimeSlots++;
+                        }
+                    }
+                }
+                ticketsPerDayMap[record.date] = dailyTicketsSold;
+                totalBookedTimeSlots += dailyBookedTimeSlots;
+                totalPossibleTimeSlots += dailyTotalTimeSlots;
+                totalTicketsSold += dailyTicketsSold;
+                totalPossibleTickets += dailyTotalTimeSlots * totalTickets;
+            } else {
+                let dailyTicketsSold = 0;
+                let dailyTotalTimeSlots = 0;
+                let dailyBookedTimeSlots = 0;
+                const timeSlots = record.timeSlots;
+                const ticketsPerTime = record.ticketsPerTime;
+                Object.values(timeSlots).forEach(tickets => {
+                    dailyTicketsSold += ticketsPerTime - tickets;
+                    dailyTotalTimeSlots++;
+                    if (tickets < ticketsPerTime) {
+                        dailyBookedTimeSlots++;
+                    }
+                });
+                ticketsPerDayMap[record.date] = dailyTicketsSold;
+                totalBookedTimeSlots += dailyBookedTimeSlots;
+                totalPossibleTimeSlots += dailyTotalTimeSlots;
+                totalTicketsSold += dailyTicketsSold;
+                totalPossibleTickets += dailyTotalTimeSlots * ticketsPerTime;
+            }
+        });
+
+        let tickets = dates.map(date => ticketsPerDayMap[date] || 0);
+        let averagePercentageBooked = (totalBookedTimeSlots / totalPossibleTimeSlots) * 100;
+        let averageCapacityBooked = (totalTicketsSold / totalPossibleTickets) * 100;
+        const revenue = totalTicketsSold * price;
+        document.getElementById("totalSales").innerHTML = "Total Sales: " + totalTicketsSold;
+        document.getElementById("revenue").innerHTML = `Estimated Revenue: $${revenue}` + ' | @ $' + price;
+        document.getElementById("percentageBooked").innerHTML = 'Average Slots Booked: ' + averagePercentageBooked.toFixed(2) + '%' + ' | ' + totalBookedTimeSlots + '/' + totalPossibleTimeSlots;
+        document.getElementById("capacityBooked").innerHTML = 'Average Capacity Booked: ' + averageCapacityBooked.toFixed(2) + '%' + ' | ' + totalTicketsSold + '/' + totalPossibleTickets;
+
+        setLabels(labels);
+        setDataset(tickets);
+        const formattedMonth = startDate.toLocaleString('default', { month: 'long' });
+        changeTitle(formattedMonth);
+        window.showMonthSelection();
+    }
     window.updateData = function (dateStr) {
         // Ensure the date string is in YYYY-MM-DD format
         let dateParts;
@@ -217,7 +400,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         } else {
             dateParts = dateStr.split('-');
         }
-        
+
         // Create the date object with UTC to avoid timezone issues
         currentDate = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2]));
         currentDate = new Date(currentDate.getTime() + currentDate.getTimezoneOffset() * 60000); // Adjust for local timezone      
@@ -265,8 +448,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     async function getCoordinates(address) {
         // Simplify the address by removing complex parts and formatting
-        const simplifiedAddress = address.split(',').slice(0, 1).join(','); // Use the first two parts of the address
-        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(simplifiedAddress.trim())}`;
+        // const simplifiedAddress = address.split(',').slice(0, 2).join(','); // Use the first two parts of the address
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address.trim())}`;
         try {
             const response = await fetch(url);
             if (!response.ok) {

@@ -116,6 +116,7 @@ import { setData, getData } from './data.js';
 			setData('address', selectedOption.getAttribute('address'));
 			setData('state_abr', selectedOption.getAttribute('state_abr'));
 			setData('city', selectedOption.getAttribute('city'));
+			setData('price', selectedOption.getAttribute('price'));
             window.location.href = "template.html";
         } else {
             // No location selected, show an alert or handle as needed

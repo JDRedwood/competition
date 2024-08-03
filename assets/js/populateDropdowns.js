@@ -10,13 +10,27 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Fetch locations from Supabase
         let { data, error } = await supabase
             .from('locations') // Your table name
-            .select('id, city, state_abr, country, name, address, table_name, link, placeId'); // Adjust based on your table schema
+            .select('id, city, state_abr, country, name, address, table_name, link, placeId, ticketPrice'); // Adjust based on your table schema
 
         if (error) {
             throw error;
         }
 
         console.log('Data fetched:', data);
+
+        const stripParentheses = (str) => str.replace(/\s*\(.*?\)\s*/g, '');
+
+        // Sort data by name (ignoring text in parentheses) and then by state
+        data.sort((a, b) => {
+            const nameA = stripParentheses(a.name).trim();
+            const nameB = stripParentheses(b.name).trim();
+
+            if (nameA < nameB) return -1;
+            if (nameA > nameB) return 1;
+            if (a.state_abr < b.state_abr) return -1;
+            if (a.state_abr > b.state_abr) return 1;
+            return 0;
+        });
 
         // Populate the dropdown
         const locationSelect = document.getElementById('location');
@@ -32,6 +46,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 option.setAttribute('address', location.address); // Store the address in the option element
                 option.setAttribute('state_abr', location.state_abr); // Store the state abbreviation in the option element
                 option.setAttribute('city', location.city); // Store the city in the option element
+                option.setAttribute('price', location.ticketPrice); // Store the ticket price in the option element
                 locationSelect.appendChild(option);
             });
         } else {
