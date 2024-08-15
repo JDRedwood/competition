@@ -18,11 +18,12 @@ var options = {
         title: {
             display: true,
             text: 'Monthly Data',
+            color: 'rgb(200,200,200)',
             font: {
                 size: 32,
                 family: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif",
                 weight: 'bold',
-                color: '#FFF' // Title color
+                // color: '#FFF' // Title color
             }
         },
         legend: {

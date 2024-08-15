@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     const state_abr = getData("state_abr");
     const price = getData("price");
 
-
     console.log("Fetching data from Supabase...");
     console.log("Table Name:", tableName);
     console.log("Location Name:", locationName);
@@ -206,7 +205,12 @@ document.addEventListener('DOMContentLoaded', async function () {
         for (let i = 0; i < 7; i++) {
             const date = new Date(currentDate);
             date.setDate(currentDate.getDate() + i);
-            labels.push(date.toLocaleDateString('en-US', { weekday: 'long' }));
+            
+            // Generate label for the previous day
+            const labelDate = new Date(date);
+            labelDate.setDate(date.getDate() + 1);
+            labels.push(labelDate.toLocaleDateString('en-US', { weekday: 'long' }));
+            
             dates.push(date.toISOString().split('T')[0]);
         }
 
@@ -237,9 +241,10 @@ document.addEventListener('DOMContentLoaded', async function () {
                 let dailyTotalTimeSlots = 0;
                 let dailyBookedTimeSlots = 0;
                 const games = record.timeSlots;
+                let totalTickets = 0;
                 for (const gameId in games) {
                     const timeSlots = games[gameId].timeSlots;
-                    const totalTickets = games[gameId].totalTickets;
+                    totalTickets = games[gameId].totalTickets;
                     for (const tickets of Object.values(timeSlots)) {
                         dailyTicketsSold += totalTickets - tickets;
                         dailyTotalTimeSlots++;
@@ -338,10 +343,11 @@ document.addEventListener('DOMContentLoaded', async function () {
                 let dailyTicketsSold = 0;
                 let dailyTotalTimeSlots = 0;
                 let dailyBookedTimeSlots = 0;
+                let totalTickets = 0;
                 const games = record.timeSlots;
                 for (const gameId in games) {
                     const timeSlots = games[gameId].timeSlots;
-                    const totalTickets = games[gameId].totalTickets;
+                    totalTickets = games[gameId].totalTickets;
                     for (const tickets of Object.values(timeSlots)) {
                         dailyTicketsSold += totalTickets - tickets;
                         dailyTotalTimeSlots++;
