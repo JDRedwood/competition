@@ -99,19 +99,30 @@ export function setLabels(labels) {
     myChart.update();
 }
 
-export function setDataset(tickets) {
-    if (data.datasets[0]) {
-        data.datasets[0].data = tickets;
+export function clearDatasets() {
+    data.datasets = []; // Clear all datasets
+    myChart.update(); // Update the chart to reflect the changes
+    console.log("All datasets cleared.");
+}
+
+export function setDataset(tickets, label, color) {
+    const existingDatasetIndex = data.datasets.findIndex(dataset => dataset.label === label);
+
+    if (existingDatasetIndex >= 0) {
+        // Update the existing dataset
+        data.datasets[existingDatasetIndex].data = tickets;
     } else {
+        // Add a new dataset
         data.datasets.push({
-            label: 'Ticket Sales',
-            backgroundColor: 'rgba(54, 162, 235, 0.5)',
-            borderColor: 'rgba(54, 162, 235, 1)',
+            label: label,
+            backgroundColor: color || 'rgba(54, 162, 235, 0.5)', // Default color
+            borderColor: color || 'rgba(54, 162, 235, 1)',       // Default border color
             borderWidth: 2,
             data: tickets,
             lineTension: 0, // Adjust line tension as needed
         });
     }
+
     myChart.update();
 }
 
