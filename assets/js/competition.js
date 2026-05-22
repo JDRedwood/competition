@@ -3,8 +3,8 @@ import { setLabels, setDataset, changeTitle, changeYAxis, clearDatasets } from '
 
 document.addEventListener('DOMContentLoaded', async function () {
     const googleApiKey = 'AIzaSyAhH_VUgkhoPPUWp7GgTauSN_gx_cwrdhc';
-    const supabaseUrl = 'https://mqvxtjqmiamjlbexwhbk.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xdnh0anFtaWFtamxiZXh3aGJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTk1MjYzNTMsImV4cCI6MjAzNTEwMjM1M30.MAD3avhcjcvqEBECSgAsmkvRpY_zoQiF7OLqnYat6jk';
+    const supabaseUrl = 'https://hxllvaanqbfydeqkxpng.supabase.co';
+    const supabaseKey = 'sb_secret_KIwXpz8Wn1ecNoWPWb-yog_fmVJNWz-';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
     const locationName = getData("locationName");
