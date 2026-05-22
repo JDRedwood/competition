@@ -4,7 +4,7 @@ import { setLabels, setDataset, changeTitle, changeYAxis, clearDatasets } from '
 document.addEventListener('DOMContentLoaded', async function () {
     const googleApiKey = 'AIzaSyAhH_VUgkhoPPUWp7GgTauSN_gx_cwrdhc';
     const supabaseUrl = 'https://hxllvaanqbfydeqkxpng.supabase.co';
-    const supabaseKey = 'sb_secret_KIwXpz8Wn1ecNoWPWb-yog_fmVJNWz-';
+    const supabaseKey = 'sb_publishable_3JDTmTI7Bkoe-0GaviGu1g_OyxsvCzU';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
     const locationName = getData("locationName");
