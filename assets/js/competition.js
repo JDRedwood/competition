@@ -54,6 +54,21 @@ document.addEventListener('DOMContentLoaded', async function () {
         return `${year}-${month}-${day}`;
     }
 
+    function parseTimeMissionSlot(slotValue) {
+        const parts = String(slotValue ?? '')
+            .split(',')
+            .map(part => Number(part.trim()) || 0);
+
+        return {
+            sold60: parts[0] || 0,
+            sold90: parts[1] || 0,
+            sold120: parts[2] || 0,
+            cap60: parts[3] || 0,
+            cap90: parts[4] || 0,
+            cap120: parts[5] || 0
+        };
+    }
+
     async function getDailyData(supabase, tableName, dateStr) {
         clearDatasets();
         const currentDate = dateStr;
@@ -310,6 +325,81 @@ document.addEventListener('DOMContentLoaded', async function () {
             setLabels(currentLabels);  // Use currentLabels here
             setDataset(tickets2HrSold, '2-Hour Tickets Sold', 'rgba(255, 100, 100, 0.6)');
             setDataset(tickets4HrSold, '4-Hour Tickets Sold', 'rgba(128, 92, 255, 0.6)');
+        } else if (tableName.includes("timemission")) {
+            let { data, error } = await supabase
+                .from(tableName)
+                .select('date, timeSlots')
+                .eq('date', currentDate);
+
+            if (error) {
+                console.error('Error fetching data:', error);
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                return;
+            }
+
+            const timeSlots = data[0].timeSlots || {};
+            currentLabels = Object.keys(timeSlots);
+
+            const tickets60Sold = [];
+            const tickets90Sold = [];
+            const tickets120Sold = [];
+            let totalTickets60 = 0;
+            let totalTickets90 = 0;
+            let totalTickets120 = 0;
+            let totalTicketsSoldCount = 0;
+            let totalBookedTimeSlots = 0;
+            let totalPossibleTimeSlots = 0;
+            let totalPossibleTickets = 0;
+
+            for (const timeSlot in timeSlots) {
+                const { sold60, sold90, sold120, cap60, cap90, cap120 } = parseTimeMissionSlot(timeSlots[timeSlot]);
+                const soldInSlot = sold60 + sold90 + sold120;
+                const capInSlot = cap60 + cap90 + cap120;
+
+                tickets60Sold.push(sold60);
+                tickets90Sold.push(sold90);
+                tickets120Sold.push(sold120);
+
+                totalTickets60 += sold60;
+                totalTickets90 += sold90;
+                totalTickets120 += sold120;
+                totalTicketsSoldCount += soldInSlot;
+                totalPossibleTickets += capInSlot;
+                totalPossibleTimeSlots++;
+                if (soldInSlot > 0) {
+                    totalBookedTimeSlots++;
+                }
+            }
+
+            const capacityBooked = totalPossibleTickets > 0
+                ? (totalTicketsSoldCount / totalPossibleTickets) * 100
+                : 0;
+            const percentageBooked = totalPossibleTimeSlots > 0
+                ? (totalBookedTimeSlots / totalPossibleTimeSlots) * 100
+                : 0;
+            const revenue = totalTicketsSoldCount * price;
+
+            const total120MinElement = document.getElementById('total120MinTickets');
+            document.getElementById("totalTickets").innerHTML = `Total Tickets: ${totalTicketsSoldCount}`;
+            document.getElementById('total2HrTickets').style.display = 'block';
+            document.getElementById('total4HrTickets').style.display = 'block';
+            document.getElementById('total2HrTickets').innerHTML = `Total 60-Min Tickets: ${totalTickets60}`;
+            document.getElementById('total4HrTickets').innerHTML = `Total 90-Min Tickets: ${totalTickets90}`;
+            if (total120MinElement) {
+                total120MinElement.style.display = 'block';
+                total120MinElement.innerHTML = `Total 120-Min Tickets: ${totalTickets120}`;
+            }
+            document.getElementById("revenue").innerHTML = `Estimated Revenue: $${revenue} | @ $${price}`;
+            document.getElementById("percentageBooked").innerHTML = `Time Slots Booked: ${percentageBooked.toFixed(2)}% | ${totalBookedTimeSlots}/${totalPossibleTimeSlots}`;
+            document.getElementById("capacityBooked").innerHTML = `Total Capacity Booked: ${capacityBooked.toFixed(2)}% | ${totalTicketsSoldCount}/${totalPossibleTickets}`;
+
+            setLabels(currentLabels);
+            setDataset(tickets60Sold, '60-Min Tickets Sold', 'rgba(255, 159, 64, 0.8)');
+            setDataset(tickets90Sold, '90-Min Tickets Sold', 'rgba(54, 162, 235, 0.8)');
+            setDataset(tickets120Sold, '120-Min Tickets Sold', 'rgba(153, 102, 255, 0.8)');
         }
     }
 
@@ -335,6 +425,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         } else if (tableName.includes("bodaborg")) {
             selectFields = 'date, timeSlots';
         } else if (tableName.includes("brkthrough")) {
+            selectFields = 'date, timeSlots';
+        } else if (tableName.includes("timemission")) {
             selectFields = 'date, timeSlots';
         } else if (tableName.includes("level99")){
             selectFields = 'date, ticketsPerTime, timeSlots';
@@ -566,6 +658,81 @@ document.addEventListener('DOMContentLoaded', async function () {
                 setLabels(labels);  // Use labels from the earlier loop
                 setDataset(tickets2HrSold, '2-Hour Tickets Sold', 'rgba(255, 100, 100, 0.6)');
                 setDataset(tickets4HrSold, '4-Hour Tickets Sold', 'rgba(128, 92, 255, 0.6)');
+            } else if (tableName.includes("timemission")) {
+                const sold60ByDayMap = {};
+                const sold90ByDayMap = {};
+                const sold120ByDayMap = {};
+                let totalTickets60 = 0;
+                let totalTickets90 = 0;
+                let totalTickets120 = 0;
+                let totalTicketsSold = 0;
+                let totalBookedTimeSlots = 0;
+                let totalPossibleTimeSlots = 0;
+                let totalPossibleTickets = 0;
+
+                data.forEach(dayRecord => {
+                    const daySlots = dayRecord.timeSlots || {};
+                    let dailySold60 = 0;
+                    let dailySold90 = 0;
+                    let dailySold120 = 0;
+                    let dailyBookedTimeSlots = 0;
+                    let dailyPossibleTimeSlots = 0;
+
+                    for (const timeSlot in daySlots) {
+                        const { sold60, sold90, sold120, cap60, cap90, cap120 } = parseTimeMissionSlot(daySlots[timeSlot]);
+                        const soldInSlot = sold60 + sold90 + sold120;
+
+                        dailySold60 += sold60;
+                        dailySold90 += sold90;
+                        dailySold120 += sold120;
+                        totalPossibleTickets += cap60 + cap90 + cap120;
+                        dailyPossibleTimeSlots++;
+
+                        if (soldInSlot > 0) {
+                            dailyBookedTimeSlots++;
+                        }
+                    }
+
+                    sold60ByDayMap[dayRecord.date] = dailySold60;
+                    sold90ByDayMap[dayRecord.date] = dailySold90;
+                    sold120ByDayMap[dayRecord.date] = dailySold120;
+                    totalTickets60 += dailySold60;
+                    totalTickets90 += dailySold90;
+                    totalTickets120 += dailySold120;
+                    totalTicketsSold += dailySold60 + dailySold90 + dailySold120;
+                    totalBookedTimeSlots += dailyBookedTimeSlots;
+                    totalPossibleTimeSlots += dailyPossibleTimeSlots;
+                });
+
+                const tickets60Sold = dates.map(date => sold60ByDayMap[date] || 0);
+                const tickets90Sold = dates.map(date => sold90ByDayMap[date] || 0);
+                const tickets120Sold = dates.map(date => sold120ByDayMap[date] || 0);
+                const averagePercentageBooked = totalPossibleTimeSlots > 0
+                    ? (totalBookedTimeSlots / totalPossibleTimeSlots) * 100
+                    : 0;
+                const averageCapacityBooked = totalPossibleTickets > 0
+                    ? (totalTicketsSold / totalPossibleTickets) * 100
+                    : 0;
+                const revenue = totalTicketsSold * price;
+
+                const total120MinElement = document.getElementById('total120MinTickets');
+                document.getElementById("totalTickets").innerHTML = `Total Tickets: ${totalTicketsSold}`;
+                document.getElementById('total2HrTickets').style.display = 'block';
+                document.getElementById('total4HrTickets').style.display = 'block';
+                document.getElementById('total2HrTickets').innerHTML = `Total 60-Min Tickets: ${totalTickets60}`;
+                document.getElementById('total4HrTickets').innerHTML = `Total 90-Min Tickets: ${totalTickets90}`;
+                if (total120MinElement) {
+                    total120MinElement.style.display = 'block';
+                    total120MinElement.innerHTML = `Total 120-Min Tickets: ${totalTickets120}`;
+                }
+                document.getElementById("revenue").innerHTML = `Estimated Revenue: $${revenue} | @ $${price}`;
+                document.getElementById("percentageBooked").innerHTML = `Average Slots Booked: ${averagePercentageBooked.toFixed(2)}% | ${totalBookedTimeSlots}/${totalPossibleTimeSlots}`;
+                document.getElementById("capacityBooked").innerHTML = `Average Capacity Booked: ${averageCapacityBooked.toFixed(2)}% | ${totalTicketsSold}/${totalPossibleTickets}`;
+
+                setLabels(labels);
+                setDataset(tickets60Sold, '60-Min Tickets Sold', 'rgba(255, 159, 64, 0.8)');
+                setDataset(tickets90Sold, '90-Min Tickets Sold', 'rgba(54, 162, 235, 0.8)');
+                setDataset(tickets120Sold, '120-Min Tickets Sold', 'rgba(153, 102, 255, 0.8)');
             }
         });
     
@@ -605,6 +772,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         } else if (tableName.includes("bodaborg")) {
             selectFields = 'date, timeSlots';
         } else if (tableName.includes("brkthrough")) {
+            selectFields = 'date, timeSlots';
+        } else if (tableName.includes("timemission")) {
             selectFields = 'date, timeSlots';
         } else if (tableName.includes("level99")) {
             selectFields = 'date, ticketsPerTime, timeSlots';
@@ -864,6 +1033,82 @@ document.addEventListener('DOMContentLoaded', async function () {
                 setDataset(ticketsSold, 'Total Tickets Sold per Day', 'rgba(75, 192, 192, 0.6)');
                 setDataset(tickets2HrSold, '2-Hour Tickets Sold', 'rgba(255, 100, 100, 0.6)');
                 setDataset(tickets4HrSold, '4-Hour Tickets Sold', 'rgba(128, 92, 255, 0.6)');
+            } else if (tableName.includes("timemission")) {
+                let tickets60Sold = [];
+                let tickets90Sold = [];
+                let tickets120Sold = [];
+                let ticketsSold = [];
+                let totalTickets60 = 0;
+                let totalTickets90 = 0;
+                let totalTickets120 = 0;
+                let totalTicketsSold = 0;
+                let totalBookedTimeSlots = 0;
+                let totalPossibleTimeSlots = 0;
+                let totalPossibleTickets = 0;
+
+                data.forEach(dayRecord => {
+                    const daySlots = dayRecord.timeSlots || {};
+                    let dailySold60 = 0;
+                    let dailySold90 = 0;
+                    let dailySold120 = 0;
+                    let dailyBookedTimeSlots = 0;
+                    let dailyPossibleTimeSlots = 0;
+
+                    for (const timeSlot in daySlots) {
+                        const { sold60, sold90, sold120, cap60, cap90, cap120 } = parseTimeMissionSlot(daySlots[timeSlot]);
+                        const soldInSlot = sold60 + sold90 + sold120;
+
+                        dailySold60 += sold60;
+                        dailySold90 += sold90;
+                        dailySold120 += sold120;
+                        totalPossibleTickets += cap60 + cap90 + cap120;
+                        dailyPossibleTimeSlots++;
+
+                        if (soldInSlot > 0) {
+                            dailyBookedTimeSlots++;
+                        }
+                    }
+
+                    tickets60Sold.push(dailySold60);
+                    tickets90Sold.push(dailySold90);
+                    tickets120Sold.push(dailySold120);
+                    ticketsSold.push(dailySold60 + dailySold90 + dailySold120);
+
+                    totalTickets60 += dailySold60;
+                    totalTickets90 += dailySold90;
+                    totalTickets120 += dailySold120;
+                    totalTicketsSold += dailySold60 + dailySold90 + dailySold120;
+                    totalBookedTimeSlots += dailyBookedTimeSlots;
+                    totalPossibleTimeSlots += dailyPossibleTimeSlots;
+                });
+
+                let averagePercentageBooked = totalPossibleTimeSlots > 0
+                    ? (totalBookedTimeSlots / totalPossibleTimeSlots) * 100
+                    : 0;
+                let averageCapacityBooked = totalPossibleTickets > 0
+                    ? (totalTicketsSold / totalPossibleTickets) * 100
+                    : 0;
+                const revenue = totalTicketsSold * price;
+
+                const total120MinElement = document.getElementById('total120MinTickets');
+                document.getElementById("totalTickets").innerHTML = `Total Tickets: ${totalTicketsSold}`;
+                document.getElementById('total2HrTickets').style.display = 'block';
+                document.getElementById('total4HrTickets').style.display = 'block';
+                document.getElementById('total2HrTickets').innerHTML = `Total 60-Min Tickets: ${totalTickets60}`;
+                document.getElementById('total4HrTickets').innerHTML = `Total 90-Min Tickets: ${totalTickets90}`;
+                if (total120MinElement) {
+                    total120MinElement.style.display = 'block';
+                    total120MinElement.innerHTML = `Total 120-Min Tickets: ${totalTickets120}`;
+                }
+                document.getElementById("revenue").innerHTML = `Estimated Revenue: $${revenue} | @ $${price}`;
+                document.getElementById("percentageBooked").innerHTML = `Average Slots Booked: ${averagePercentageBooked.toFixed(2)}% | ${totalBookedTimeSlots}/${totalPossibleTimeSlots}`;
+                document.getElementById("capacityBooked").innerHTML = `Average Capacity Booked: ${averageCapacityBooked.toFixed(2)}% | ${totalTicketsSold}/${totalPossibleTickets}`;
+
+                setLabels(labels);
+                setDataset(ticketsSold, 'Total Tickets Sold per Day', 'rgba(75, 192, 192, 0.6)');
+                setDataset(tickets60Sold, '60-Min Tickets Sold', 'rgba(255, 159, 64, 0.8)');
+                setDataset(tickets90Sold, '90-Min Tickets Sold', 'rgba(54, 162, 235, 0.8)');
+                setDataset(tickets120Sold, '120-Min Tickets Sold', 'rgba(153, 102, 255, 0.8)');
             }
         });
 
